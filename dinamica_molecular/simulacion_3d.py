@@ -1,18 +1,17 @@
 """
 Autor: David Duran
-Este programa fue escrito para la clase de Redacción y Metodología Científica de la
-Universidad Nacional Mayor de San Marcos, semestre 2023-0.
-
-Este programa simula el comportamiento de un gas utilizando el potencial de Lennard-Jones
-y el algoritmo de Verlet de velocidad para la integración de ecuaciones diferenciales. El programa utiliza
-la librería numba para acelerar el cálculo de las fuerzas y la librería matplotlib para la
-animación de la simulación.
+Fecha: 2023-02-21
+Descripción: Este programa simula el comportamiento 
+de partículas en una caja utilizando el potencial de
+Lennard-Jones y el algoritmo de velocidad de Verlet
+para la integración de ecuaciones diferenciales.
+El programa utiliza la biblioteca numba para cálculos
+de fuerza más rápidos y la biblioteca matplotlib para
+visualizar la simulación a través de animación.
 """
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.animation import FuncAnimation
 import matplotlib.animation as animation
 import numba
 
@@ -21,27 +20,23 @@ np.random.seed(0)
 
 # Definiendo las constantes
 sig = 1
-ep = 1
+ep = 0.4
 m = 1
 
 # Longitud de la caja
-lx = 20
-ly = lx
-lz = lx
+lx = ly = lz = 20
 
 # Parámetros de la simulación
-n_particulas = 512
-n_pasos = 2000
+n_particulas = 1000
+n_pasos = 3000
 dt = 0.005
 va = np.sqrt(12)
 rc = 2.5 * sig
-avx = 0
-avy = 0
-avz = 0
+avx = avy = avz = 0
 t2 = (dt ** 2) / (2 * m)
 t1 = dt / (2 * m)
-fc = (24 / rc ** 7) * ((2 / rc ** 6) - 1)
-Vc = (4 / rc ** 6) * ((1 / rc ** 6) - 1)
+fc = ep * (24 / rc ** 7) * ((2 / rc ** 6) - 1)
+Vc = ep * (4 / rc ** 6) * ((1 / rc ** 6) - 1)
 
 # Función para inicializar las posiciones
 @numba.jit
@@ -52,7 +47,7 @@ def inicializar_posiciones():
     z = np.zeros(n_particulas)
     
     # Establecer los rangos de las posiciones y el paso
-    p1, p2, dp = 2, 16, 2
+    p1, p2, dp = 2, 19, 2
     
     # Iterar sobre todas las posiciones posibles y llenar los arreglos de posiciones
     kk = 0
@@ -83,7 +78,7 @@ def inicializar_velocidades():
 
     return vx, vy, vz
 
-# Función para calcular las fuerzas
+# Función para inicializar y calcular las fuerzas
 @numba.jit
 def calcular_fuerzas(x, y, z):
     # Inicializar los arreglos de fuerzas
@@ -112,7 +107,7 @@ def calcular_fuerzas(x, y, z):
             
             # Calcular las fuerzas y actualizar los arreglos de fuerzas
             if r <= rc:
-                f = (24 / r ** 7) * ((2 / r ** 6) - 1)
+                f = ep * (24 / r ** 7) * ((2 / r ** 6) - 1)
                 fm = f - fc
                 fx[i] += fm * (dx / r)
                 fy[i] += fm * (dy / r)
@@ -122,7 +117,7 @@ def calcular_fuerzas(x, y, z):
                 fz[j] -= fm * (dz / r)
                 
                 # Calcular la energía potencial y actualizar la energía potencial total
-                V = (4 / r ** 6) * ((1 / r ** 6) - 1)
+                V = ep * (4 / r ** 6) * ((1 / r ** 6) - 1)
                 Vm = V - Vc + r * fc - rc * fc
                 PEN += Vm
     
@@ -214,6 +209,20 @@ velocity = np.sqrt(vx**2 + vy**2 + vz**2)
 # Las gráficas forman parte de una gráfica de 2x2
 # Se utiliza add_subplot para agregar las gráficas a la figura principal
 
+# Configuración de la gráfica
+plt.style.use('seaborn-v0_8-colorblind')
+
+# Activar el uso de LaTeX para la renderización de texto
+# Estos parámetros deben ser establecidos antes de crear la primera gráfica, de lo contrario serán ignorados
+plt.rcParams.update({
+    "ytick.color" : "black",
+    "xtick.color" : "black",
+    "axes.labelcolor" : "black",
+    "axes.edgecolor" : "black",
+    "text.usetex": True,
+    "font.family": "serif",
+})
+
 # Inicializar la figura
 fig = plt.figure(figsize=(16, 12))
 
@@ -298,7 +307,7 @@ def update(frame):
     actual_velocity = np.sqrt(vx**2 + vy**2 + vz**2)
 
     # Actualizar la gráfica
-    ax.clear()                  # Limpiar la gráfica
+    ax.clear()
     # Limitar los ejes
     ax.set_xlim([0, lx])
     ax.set_ylim([0, ly])
